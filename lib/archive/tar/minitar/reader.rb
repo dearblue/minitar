@@ -138,8 +138,8 @@ module Archive::Tar::Minitar
     # the new _writer_ as an argument and the Reader object will
     # automatically be closed when the block terminates. In this instance,
     # +Reader::open+ returns the value of the block.
-    def self.open(io)
-      reader = new(io)
+    def self.open(io, *args)
+      reader = new(io, *args)
       return reader unless block_given?
 
       # This exception context must remain, otherwise the stream closes on open
@@ -177,9 +177,10 @@ module Archive::Tar::Minitar
     end
 
     # Creates and returns a new Reader object.
-    def initialize(io)
+    def initialize(io, opts = {})
       @io = io
       @init_pos = (io.pos rescue nil)
+      @ignore_zeros = opts.fetch(:ignore_zeros, false)
     end
 
     # Resets the read pointer to the beginning of data stream. Do not call
@@ -207,7 +208,10 @@ module Archive::Tar::Minitar
         return if @io.eof?
 
         header = Archive::Tar::Minitar::PosixHeader.from_stream(@io)
-        return if header.empty?
+        if header.empty?
+          next if @ignore_zeros
+          return
+        end
 
         if header.long_name?
           name = @io.read(512).rstrip
