@@ -81,8 +81,8 @@ module Archive::Tar::Minitar
     #    Archive::Tar::Minitar::Writer.open(STDOUT) do |w|
     #      w.add_file_simple('foo.txt', :size => 3)
     #    end
-    def self.open(io) # :yields Writer:
-      writer = new(io)
+    def self.open(io, *args) # :yields Writer:
+      writer = new(io, *args)
       return writer unless block_given?
 
       # This exception context must remain, otherwise the stream closes on open
@@ -95,9 +95,10 @@ module Archive::Tar::Minitar
     end
 
     # Creates and returns a new Writer object.
-    def initialize(io)
+    def initialize(io, opts = {})
       @io     = io
       @closed = false
+      @omit_eof_white_block = opts.fetch(:omit_eof_white_block, false)
     end
 
     # Adds a file to the archive as +name+. The data can be provided in the
@@ -269,7 +270,7 @@ module Archive::Tar::Minitar
     # stream.
     def close
       return if @closed
-      @io.write("\0" * 1024)
+      @io.write("\0" * 1024) unless @omit_eof_white_block
       @closed = true
     end
 

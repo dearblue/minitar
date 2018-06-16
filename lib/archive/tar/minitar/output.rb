@@ -17,8 +17,8 @@ module Archive::Tar::Minitar
     # call-seq:
     #    Archive::Tar::Minitar::Output.open(io) -> output
     #    Archive::Tar::Minitar::Output.open(io) { |output| block } -> obj
-    def self.open(output)
-      stream = new(output)
+    def self.open(output, *args)
+      stream = new(output, *args)
       return stream unless block_given?
 
       # This exception context must remain, otherwise the stream closes on open
@@ -37,10 +37,10 @@ module Archive::Tar::Minitar
     # call-seq:
     #    Archive::Tar::Minitar::Output.tar(io) -> enumerator
     #    Archive::Tar::Minitar::Output.tar(io) { |tar| block } -> obj
-    def self.tar(output)
-      return to_enum(__method__, output) unless block_given?
+    def self.tar(output, *args)
+      return to_enum(__method__, output, *args) unless block_given?
 
-      open(output) do |stream|
+      open(output, *args) do |stream|
         yield stream.tar
       end
     end
@@ -53,13 +53,13 @@ module Archive::Tar::Minitar
     # call-seq:
     #    Archive::Tar::Minitar::Output.new(io) -> output
     #    Archive::Tar::Minitar::Output.new(path) -> output
-    def initialize(output)
+    def initialize(output, *args)
       @io = if output.respond_to?(:write)
               output
             else
               ::Kernel.open(output, 'wb')
             end
-      @tar = Archive::Tar::Minitar::Writer.new(@io)
+      @tar = Archive::Tar::Minitar::Writer.new(@io, *args)
     end
 
     # Returns the Writer object for direct access.
